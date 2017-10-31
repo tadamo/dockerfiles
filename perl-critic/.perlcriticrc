@@ -1,0 +1,52 @@
+################################
+# cmd options
+################################
+severity = 3
+verbose = %f [%p] %m at line %l, column %c.  (Severity: %s)\n
+
+################################
+# include rules below severity 3
+################################
+[NamingConventions::Capitalization]
+severity = 3
+
+[ControlStructures::ProhibitPostfixControls]
+severity = 3
+
+[BuiltinFunctions::ProhibitBooleanGrep]
+severity = 3
+
+[CodeLayout::RequireTidyCode]
+severity = 3
+
+[ControlStructures::ProhibitUnlessBlocks]
+severity = 3
+
+################################
+# Disable rules
+################################
+[-ValuesAndExpressions::ProhibitImplicitNewlines]
+[-Subroutines::RequireArgUnpacking]
+
+################################
+# Relax rules
+################################
+# Ignore missing use strict and use warnings for Local::Moose
+[TestingAndDebugging::RequireUseWarnings]
+equivalent_modules = Local::Moose
+[TestingAndDebugging::RequireUseStrict]
+equivalent_modules = Local::Moose
+
+# Allow most uses of Postfix
+[ControlStructures::ProhibitPostfixControls]
+allow = for if while
+
+# Allow some magic variables
+[Variables::RequireLocalizedPunctuationVars]
+allow = @ARGV $ARGV @ENV $ENV %ENV
+
+# Configure private subs
+[Subroutines::ProhibitUnusedPrivateSubroutines]
+skip_when_using = Moose::Role Moo::Role Role::Tiny
+private_name_regex = ^(_|_build_)
+
