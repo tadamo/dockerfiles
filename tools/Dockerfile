@@ -5,4 +5,4 @@ RUN apt-get update && apt-get install -y \
   httpie \
   jq \
   ldap-utils \
-  netcat
+  netcat-openbsd
