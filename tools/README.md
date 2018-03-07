@@ -13,3 +13,7 @@ oc run tools \
   --limits='cpu=20m,memory=20Mi'
   -- sleep "1000000"
 ```
+
+```
+oc create -f https://raw.githubusercontent.com/tadamo/dockerfiles/master/tools/tools.yaml
+```
