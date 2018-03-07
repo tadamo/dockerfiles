@@ -8,5 +8,12 @@ spec:
     image: tadamo/tools:latest
     imagePullPolicy: Always
     command:
-    - sleep
-    - "1000000"
+      - sleep
+      - "1000000"
+    resources:
+      limits:
+        cpu: 20m
+        memory: 20Mi
+      requests:
+        cpu: 20m
+        memory: 20Mi
