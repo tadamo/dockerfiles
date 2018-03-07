@@ -1,9 +1,11 @@
-FROM debian:stable-slim
-RUN apt-get update && apt-get install -y \
+FROM alpine:latest
+RUN apk --no-cache add \
   ca-certificates \
+  openssl \
   curl \
-  dnsutils \
   httpie \
+  bind-tools \
+  netcat-openbsd \
   jq \
-  ldap-utils \
-  netcat-openbsd
+  coreutils \
+  openldap-clients
