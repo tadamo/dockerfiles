@@ -14,6 +14,8 @@ oc run tools \
   -- sleep "1000000"
 ```
 
+OR
+
 ```
 oc create -f https://raw.githubusercontent.com/tadamo/dockerfiles/master/tools/tools.yaml
 ```
