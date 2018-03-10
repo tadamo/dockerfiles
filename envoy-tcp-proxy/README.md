@@ -2,6 +2,8 @@
 
 Run a tcp proxy via container. Can create a tunnel to a remote service.
 
+Uses envoy to create a TCP proxy. Updates envoy configuration at runtime with ENV variables.
+
 # Example
 
 ```
