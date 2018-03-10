@@ -1,0 +1,34 @@
+{
+    "listeners": [{
+        "address": "tcp://0.0.0.0:8000",
+        "filters": [{
+            "name": "tcp_proxy",
+            "config": {
+                "stat_prefix": "target",
+                "route_config": {
+                    "routes": [{
+                        "cluster": "target"
+                    }]
+                },
+                "access_log": [{
+                    "path": "/dev/stdout"
+                }]
+            }
+        }]
+    }],
+    "admin": {
+        "access_log_path": "/dev/null",
+        "address": "tcp://0.0.0.0:8001"
+    },
+    "cluster_manager": {
+        "clusters": [{
+            "name": "target",
+            "connect_timeout_ms": 300,
+            "type": "strict_dns",
+            "lb_type": "round_robin",
+            "hosts": [{
+                "url": "tcp://httpbin.org:80"
+            }]
+        }]
+    }
+}
