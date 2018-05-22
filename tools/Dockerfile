@@ -5,9 +5,12 @@ RUN apk update && \
     ca-certificates \
     openssl \
     curl \
-    httpie \
     bind-tools \
     netcat-openbsd \
     jq \
     coreutils \
-    openldap-clients
+    openldap-clients \
+    httpie && \
+    mkdir -p /.httpie && \
+    chgrp -R 0 /.httpie && \
+    chmod -R g=u /.httpie
