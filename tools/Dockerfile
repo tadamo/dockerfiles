@@ -10,7 +10,8 @@ RUN apk update && \
     jq \
     coreutils \
     openldap-clients \
-    httpie && \
+    httpie \
+    apache2-utils && \
     mkdir -p /.httpie && \
     chgrp -R 0 /.httpie && \
     chmod -R g=u /.httpie
