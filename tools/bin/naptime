@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+NAP_SECONDS=${NAP_SECONDS:-10}
+
+# Send HANGUP signal to process after given amount of seconds.
+echo "Napping for $NAP_SECONDS seconds..."
+timeout -s HUP --preserve-status $NAP_SECONDS wait-until-hangup

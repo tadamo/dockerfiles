@@ -15,3 +15,4 @@ RUN apk update && \
     mkdir -p /.httpie && \
     chgrp -R 0 /.httpie && \
     chmod -R g=u /.httpie
+COPY ./bin/ /usr/local/bin
