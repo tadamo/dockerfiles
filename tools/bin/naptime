@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 NAP_SECONDS=${NAP_SECONDS:-10}
 LOG_INTERVAL_SECONDS=${LOG_INTERVAL_SECONDS:-1}
+EXIT_CODE=${EXIT_CODE:-0}
 
 total_seconds_left=$NAP_SECONDS
 echo "Staring nap at $(date) for $NAP_SECONDS seconds..."
@@ -10,3 +11,4 @@ for i in $(seq 1 $NAP_SECONDS); do
     total_seconds_left=$(expr "$total_seconds_left" - "$LOG_INTERVAL_SECONDS")
 done
 echo "Stopped nap at $(date)"
+exit $EXIT_CODE
