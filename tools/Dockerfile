@@ -11,7 +11,9 @@ RUN apk update && \
     coreutils \
     openldap-clients \
     httpie \
-    apache2-utils && \
+    apache2-utils \
+    py-pip && \
+    pip install yq && \
     mkdir -p /.httpie && \
     chgrp -R 0 /.httpie && \
     chmod -R g=u /.httpie
