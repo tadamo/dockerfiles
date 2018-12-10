@@ -1,6 +1,7 @@
 FROM alpine:latest
-RUN apk update && \
-    apk add --no-cache \
+RUN set -x; \
+    apk update && \
+    apk add --no-cache --update \
     bash \
     ca-certificates \
     openssl \
@@ -12,9 +13,14 @@ RUN apk update && \
     openldap-clients \
     httpie \
     apache2-utils \
-    py-pip && \
-    pip install yq && \
+    py-pip \
+    && \
+    pip install yq \
+    && \
     mkdir -p /.httpie && \
     chgrp -R 0 /.httpie && \
-    chmod -R g=u /.httpie
+    chmod -R g=u /.httpie \
+    && \
+    find / | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf && \
+    rm -rf /var/cache/* /root/.cache/*
 COPY ./bin/ /usr/local/bin
