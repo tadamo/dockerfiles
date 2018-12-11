@@ -1,2 +1,5 @@
 --perl-best-practices
+--nostandard-output
 --maximum-line-length=80
+-b
+-bext='/delete'

@@ -2,7 +2,13 @@
 # cmd options
 ################################
 severity = 3
-verbose = %f [%p] %m at line %l, column %c.  (Severity: %s)\n
+color = 1
+color-severity-5 = RED
+color-severity-4 = BRIGHT_RED
+color-severity-3 = MAGENTA
+color-severity-2 = BRIGHT_MAGENTA
+color-severity-1 = BRIGHT_MAGENTA
+verbose = \n%F - [%P]\n %m at line %l, near '%r'.  (Severity: %s)\n%d\n    %e\n
 
 ################################
 # include rules below severity 3
@@ -33,9 +39,9 @@ severity = 3
 ################################
 # Ignore missing use strict and use warnings for Local::Moose
 [TestingAndDebugging::RequireUseWarnings]
-equivalent_modules = Local::Moose
+equivalent_modules = Moo Moo::Role Dancer Dancer2
 [TestingAndDebugging::RequireUseStrict]
-equivalent_modules = Local::Moose
+equivalent_modules = Moo Moo::Role Dancer Dancer2
 
 # Allow most uses of Postfix
 [ControlStructures::ProhibitPostfixControls]
