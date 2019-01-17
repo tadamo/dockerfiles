@@ -27,10 +27,21 @@ RUN set -x; \
     chmod -R g=u /.httpie \
     && \
     # allow unpriviledged access to update conf files
-    chgrp -R 0 /etc/nginx/nginx.conf \
-    && chmod -R g=u /etc/nginx/nginx.conf \
-    && chgrp -R 0 /etc/nginx/conf.d/ \
-    && chmod -R g=u /etc/nginx/conf.d/ \
+    mkdir -p /var/lib/nginx/logs && \
+    touch /var/lib/nginx/logs/error.log && \
+    chgrp -R 0 \
+    /etc/nginx/nginx.conf \
+    /etc/nginx/conf.d/ \
+    /var/log/ \
+    /var/lib/nginx \
+    /var/tmp/ \
+    && \
+    chmod -R g=u \
+    /etc/nginx/nginx.conf \
+    /etc/nginx/conf.d/ \
+    /var/log/ \
+    /var/lib/nginx \
+    /var/tmp/ \
     && \
     # cleanup cache
     find / | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf && \
