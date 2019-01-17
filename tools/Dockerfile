@@ -14,6 +14,8 @@ RUN set -x; \
     httpie \
     apache2-utils \
     py-pip \
+    gettext \
+    nginx \
     && \
     pip install yq \
     && \
@@ -23,4 +25,7 @@ RUN set -x; \
     && \
     find / | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf && \
     rm -rf /var/cache/* /root/.cache/*
-COPY ./bin/ /usr/local/bin
+COPY ./bin/ /usr/local/bin/
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ./nginx-conf-templates/ /etc/nginx/conf.d/templates
+ENV LISTEN_PORT 8000
