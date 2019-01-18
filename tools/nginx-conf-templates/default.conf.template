@@ -2,6 +2,10 @@ server {
     listen $LISTEN_PORT default_server reuseport;
     location / {
         add_header Content-Type 'text/plain';
+        return 200 'OK';
+    }
+    location /echo {
+        add_header Content-Type 'text/plain';
         add_header X-Simple-Server '👍';
         return 200 '
             host                                 = $host
