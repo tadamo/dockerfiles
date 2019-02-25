@@ -9,6 +9,7 @@ RUN set -x; \
     curl \
     bind-tools \
     netcat-openbsd \
+    nmap \
     jq \
     coreutils \
     openldap-clients \
