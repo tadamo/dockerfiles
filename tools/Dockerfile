@@ -18,6 +18,7 @@ RUN set -x; \
     py-pip \
     gettext \
     nginx \
+    iperf3 \
     && \
     # pip packages
     pip install yq \
