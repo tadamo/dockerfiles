@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -e
+SLEEP_INTERVAL_SECONDS=${SLEEP_INTERVAL_SECONDS:-5}
+
+while sleep "$SLEEP_INTERVAL_SECONDS"; do
+    pubip=$(curl -s https://ipinfo.io/ip)
+    echo "IP: $pubip"
+    echo "nslookup $pubip:"
+    nslookup "$pubip"
+done
