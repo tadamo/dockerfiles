@@ -12,6 +12,7 @@ RUN set -x \
     jq \
     coreutils \
     openldap-clients \
+    openssh-client \
     httpie \
     apache2-utils \
     py-pip \
@@ -40,9 +41,12 @@ RUN set -x \
     /var/log/ \
     /var/lib/nginx \
     /var/tmp/ \
+    # ssh keys (testing only)
+    && ssh-keygen -t ed25519 -a 100 -C "tools-insecure-ed25519 SSH key" -f  /root/.ssh/tools-insecure-ed25519 -P "" \
+    && printf "Host *\n  IdentityFile /root/.ssh/tools-insecure-ed25519\n" >> /etc/ssh/ssh_config \
     # cleanup cache
     && find / | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf \
-    && rm -rf /var/cache/* /root/.cache/*
+    && rm -rf /var/cache /root/.cache
 COPY ./bin/ /usr/local/bin/
 COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY ./nginx-conf-templates/ /etc/nginx/conf.d/templates
