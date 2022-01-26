@@ -30,14 +30,12 @@ RUN set -x \
     && mkdir -p /var/lib/nginx/logs \
     && touch /var/lib/nginx/logs/error.log \
     && chgrp -R 0 \
-    /etc/nginx/nginx.conf \
-    /etc/nginx/conf.d/ \
+    /etc/nginx/ \
     /var/log/ \
     /var/lib/nginx \
     /var/tmp/ \
     && chmod -R g=u \
-    /etc/nginx/nginx.conf \
-    /etc/nginx/conf.d/ \
+    /etc/nginx/ \
     /var/log/ \
     /var/lib/nginx \
     /var/tmp/ \
