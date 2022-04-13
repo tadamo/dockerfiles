@@ -2,6 +2,12 @@
 
 Small image with several tools installed for testing/debugging. (See `Dockerfile`)
 
+## build
+
+```shell
+docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 -t tadamo/tools:latest .
+```
+
 ## Usage Examples
 
 ### Docker
