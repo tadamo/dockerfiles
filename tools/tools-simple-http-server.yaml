@@ -4,10 +4,10 @@ kind: Service
 metadata:
     name: tools-http
     labels:
-        name: tools-http
+        app: tools-http
 spec:
     selector:
-        name: tools-http
+        app: tools-http
     ports:
         - name: http
           port: 8000
@@ -21,7 +21,7 @@ spec:
     replicas: 1
     selector:
         matchLabels:
-            name: tools-http
+            app: tools-http
     template:
         metadata:
             annotations:
@@ -29,13 +29,13 @@ spec:
                 kubernetes.io/ingress-bandwidth: 100M
                 kubernetes.io/egress-bandwidth: 100M
             labels:
-                name: tools-http
+                app: tools-http
         spec:
             containers:
                 - name: tools-http
                   image: tadamo/tools:latest
                   imagePullPolicy: Always
-                  command: ["simple-http-server"]
+                  command: ["/usr/local/bin/simple-http-server"]
                   ports:
                       - name: http
                         containerPort: 8000
