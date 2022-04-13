@@ -1,4 +1,7 @@
 FROM alpine:latest
+COPY ./bin/ /usr/local/bin/
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ./nginx-conf-templates/ /etc/nginx/conf.d/templates
 RUN set -x \
     && apk update \
     && apk add --no-cache --update \
@@ -29,24 +32,13 @@ RUN set -x \
     # allow unpriviledged access to update conf files
     && mkdir -p /var/lib/nginx/logs \
     && touch /var/lib/nginx/logs/error.log \
-    && chgrp -R 0 \
-    /etc/nginx/ \
-    /var/log/ \
-    /var/lib/nginx \
-    /var/tmp/ \
-    && chmod -R g=u \
-    /etc/nginx/ \
-    /var/log/ \
-    /var/lib/nginx \
-    /var/tmp/ \
+    && chgrp -R 0 /etc/nginx/ /var/log/ /var/lib/nginx /var/tmp/ \
+    && chmod -R g=u /etc/nginx/ /var/log/ /var/lib/nginx /var/tmp/ \
     # ssh keys (testing only)
     && ssh-keygen -t ed25519 -a 100 -C "tools-insecure-ed25519 SSH key" -f  /root/.ssh/tools-insecure-ed25519 -P "" \
     && printf "Host *\n  IdentityFile /root/.ssh/tools-insecure-ed25519\n" >> /etc/ssh/ssh_config \
     # cleanup cache
     && find / | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf \
     && rm -rf /var/cache /root/.cache
-COPY ./bin/ /usr/local/bin/
-COPY ./nginx.conf /etc/nginx/nginx.conf
-COPY ./nginx-conf-templates/ /etc/nginx/conf.d/templates
 ENV TZ America/New_York
 ENV LISTEN_PORT 8000
