@@ -32,7 +32,7 @@ spec:
                 name: tools-http
         spec:
             containers:
-                - name: httpbin
+                - name: tools-http
                   image: tadamo/tools:latest
                   imagePullPolicy: Always
                   command: ["simple-http-server"]
