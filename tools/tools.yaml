@@ -35,8 +35,8 @@ spec:
                         fieldPath: spec.serviceAccountName
           resources:
               requests:
+                  cpu: 50m
+                  memory: 50Mi
+              limits:
                   cpu: 100m
                   memory: 100Mi
-              limits:
-                  cpu: 200m
-                  memory: 200Mi
