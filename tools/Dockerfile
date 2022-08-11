@@ -23,6 +23,7 @@ RUN set -x \
     nginx \
     iperf3 \
     tzdata \
+    mysql-client \
     # pip packages
     && pip install yq \
     # allow unpriviledged access
