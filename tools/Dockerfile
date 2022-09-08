@@ -24,6 +24,7 @@ RUN set -x \
     iperf3 \
     tzdata \
     mysql-client \
+    postgresql13-client \
     # pip packages
     && pip install yq \
     # allow unpriviledged access
