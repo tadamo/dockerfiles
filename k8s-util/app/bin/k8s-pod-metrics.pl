@@ -8,16 +8,20 @@ use Mojo::Util qw(dumper);
 use Mojo::Log;
 use Text::Table;
 use Time::Piece;
+use Term::ExtendedColor ':attributes';
 
-my $log = Mojo::Log->new;
+my $log = Mojo::Log->new->level( $ENV{MOJO_LOG_LEVEL} );
 my $ua  = Mojo::UserAgent->new;
-my $tb  = Text::Table->new(
-    "NAMESPACE", "NAME",     "PHASE",     "START-TIME",
-    "NODE",      "IP",       "|",         "NAME",
-    "READY",     "RESTARTS", "CPU-REQ",   "CPU-LIMIT",
-    "CPU-USAGE", "MEM-REQ",  "MEM-LIMIT", "MEM-USAGE",
-    "MEM%"
-);
+my @columns;
+push @columns,
+    bold($_)
+    for (
+    "NAMESPACE", "NAME",      "PHASE",     "START-TIME", "NODE",
+    "IP",        "|",         "NAME",      "READY",      "RESTARTS",
+    "CPU-REQ",   "CPU-LIMIT", "CPU-USAGE", "MEM-REQ",    "MEM-LIMIT",
+    "MEM-USAGE", "MEM%"
+    );
+my $tb = Text::Table->new(@columns);
 
 ###############################################################################
 ###############################################################################
@@ -101,42 +105,54 @@ for my $pod_info_ref ( @{ $pods_info_ref->{items} } ) {
         $pod_info_ref->{spec}{nodeName},
         $pod_info_ref->{status}{podIP},
     );
+    my @empty_tb_pod_row = ( "", "", "", "", "", "" );
+    my $tb_pod_row_added_already;
 
     my $pod_metrics_ref = (
         grep {
-                    $_->{namespace} eq $pod_info_ref->{metadata}{namespace}
-                and $_->{name} eq $pod_info_ref->{metadata}{name}
+            $_->{metadata}{namespace} eq $pod_info_ref->{metadata}{namespace}
+                and $_->{metadata}{name} eq $pod_info_ref->{metadata}{name}
         } @{ $pods_metrics_ref->{items} }
     )[0];
-
-    use Data::Dumper qw(Dumper);
-    warn Dumper $pod_metrics_ref;
 
     for my $container_ref ( @{ $pod_info_ref->{spec}{containers} } ) {
         my $container_status_ref
             = ( grep { $_->{name} eq $container_ref->{name} }
                 @{ $pod_info_ref->{status}{containerStatuses} } )[0];
+        my $container_metrics_ref
+            = ( grep { $_->{name} eq $container_ref->{name} }
+                @{ $pod_metrics_ref->{containers} } )[0];
+
+        $container_status_ref->{ready}
+            = $container_status_ref->{ready}
+            ? fg( "springgreen3", "✔" )
+            : fg( "red2",         "X" );
+
         my @tb_container_row = (
-            "",
+            "|",
             $container_ref->{name},
             $container_status_ref->{ready},
             $container_status_ref->{restartCount},
             $container_ref->{resources}{requests}{cpu},
             $container_ref->{resources}{requests}{memory},
-            "",
+            $container_metrics_ref->{usage}{cpu},
             $container_ref->{resources}{limits}{cpu},
             $container_ref->{resources}{limits}{memory},
+            $container_metrics_ref->{usage}{memory},
             "",
         );
-        push @tb_pod_row, @tb_container_row;
+
+        $tb->load(
+            [   ( $tb_pod_row_added_already ? @empty_tb_pod_row : @tb_pod_row ),
+                @tb_container_row
+            ]
+        );
+        $tb_pod_row_added_already = 1;
     }
-
-    $tb->load( \@tb_pod_row );
-
-    last;
 }
 
 ###############################################################################
 ###############################################################################
 ###############################################################################
+binmode( STDOUT, "encoding(UTF-8)" );
 print $tb;

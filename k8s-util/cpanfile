@@ -3,5 +3,5 @@ requires "Future::AsyncAwait";
 requires "IO::Socket::SSL";
 requires "Cpanel::JSON::XS";
 requires "Mojolicious";
-requires "Term::ANSIColor";
+requires "Term::ExtendedColor";
 requires "Text::Table";
