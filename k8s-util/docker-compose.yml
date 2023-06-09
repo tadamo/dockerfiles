@@ -1,0 +1,11 @@
+---
+services:
+    k8s-util:
+        image: tadamo/k8s-util
+        build:
+            context: .
+        volumes:
+            - $KUBECONFIG:/root/.kube/config
+            - ./app:/app
+        environment:
+            - MOJO_LOG_LEVEL=debug

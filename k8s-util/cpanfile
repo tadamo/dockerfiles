@@ -1,0 +1,5 @@
+requires "YAML::XS";
+requires "Future::AsyncAwait";
+requires "IO::Socket::SSL";
+requires "Cpanel::JSON::XS";
+requires "Mojolicious";
