@@ -15,6 +15,7 @@ ENV MOJO_LOG_LEVEL info
 ENV MOJO_MODE development
 ENV PERL5LIB $MOJO_HOME/lib
 ENV PATH $MOJO_HOME/bin:$PATH
+ENV WATCH_ITERATION 2
 
 RUN set -x \
     && apk update \
