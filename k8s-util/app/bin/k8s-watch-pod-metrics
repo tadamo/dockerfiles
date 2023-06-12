@@ -116,7 +116,7 @@ sub load_text_table {
     for my $pod_info_ref ( @{ $pods_info_ref->{items} } ) {
         my @tb_pod_row = (
             $pod_info_ref->{metadata}{name},
-            $pod_info_ref->{status}{phase},
+            phase_text( $pod_info_ref->{status}{phase} ),
             utc_to_local( $pod_info_ref->{status}{startTime} ),
             $pod_info_ref->{spec}{nodeName},
             $pod_info_ref->{status}{podIP},
@@ -140,16 +140,6 @@ sub load_text_table {
                 = ( grep { $_->{name} eq $container_ref->{name} }
                     @{ $pod_metrics_ref->{containers} } )[0];
 
-            $container_status_ref->{ready} = fg( "springgreen3", "✔" );
-            if ( not $container_status_ref->{ready} ) {
-                $container_status_ref->{ready} = "-"
-                    if $pod_info_ref->{status}{phase} eq "Pending";
-                $container_status_ref->{ready} = fg( "lightyellow3", "?" )
-                    if $pod_info_ref->{status}{phase} eq "Unknown";
-                $container_status_ref->{ready} = fg( "red2", "X" )
-                    if $pod_info_ref->{status}{phase} eq "Failed";
-            }
-
             my $container_resource_memory_usage_bytes
                 = $number_format->unformat_number(
                 $container_metrics_ref->{usage}{memory} )
@@ -168,8 +158,11 @@ sub load_text_table {
             my @tb_container_row = (
                 bold( fg( "grey23", "|" ) ),
                 $container_ref->{name},
-                $container_status_ref->{ready},
-                $container_status_ref->{restartCount},
+                ready_text(
+                    $container_status_ref->{ready},
+                    $pod_info_ref->{status}{phase}
+                ),
+                restarts_text( $container_status_ref->{restartCount} ),
                 $container_ref->{resources}{requests}{cpu},
                 $container_ref->{resources}{limits}{cpu},
                 $container_metrics_ref->{usage}{cpu},
@@ -201,10 +194,34 @@ sub load_text_table {
     return $tb;
 }
 
+sub phase_text ($phase) {
+    return "$phase"                        if $phase eq 'Succeeded';
+    return fg( "lightskyblue3", "$phase" ) if $phase eq 'Pending';
+    return "$phase"                        if $phase eq 'Running';
+    return fg( "red2", "$phase" )          if $phase eq 'Failed';
+    return fg( "darkorange3", "$phase" )   if $phase eq 'Unknown';
+    return fg( "red2", "$phase" );
+}
+
+sub ready_text ( $ready, $phase ) {
+    return "↻"                        if $ready;
+    return "✔"                        if $phase eq 'Succeeded';
+    return fg( "lightskyblue3", "-" ) if $phase eq 'Pending';
+    return fg( "darkorange3", "•" )   if $phase eq 'Running';
+    return fg( "red2", "X" )          if $phase eq 'Failed';
+    return fg( "darkorange3", "☸️" )  if $phase eq 'Unknown';
+    return fg( "red2", "⁉️" );
+}
+
+sub restarts_text ($restarts) {
+    return fg( "darkorange3", "$restarts" ) if $restarts > 0;
+    return $restarts;
+}
+
 sub container_resource_cpu_usage_percentage_text ( $container_cpu_limit,
     $container_cpu_usage )
 {
-    return '-'
+    return fg( "grey23", "-" )
         if not $container_cpu_limit
         or not $container_cpu_usage;
 
@@ -243,7 +260,7 @@ sub container_resource_cpu_usage_percentage_text ( $container_cpu_limit,
 sub container_resource_memory_usage_percentage_text ( $container_memory_limit,
     $container_memory_usage_bytes )
 {
-    return '-'
+    return fg( "grey23", "-" )
         if not $container_memory_limit
         or not $container_memory_usage_bytes;
 
@@ -284,19 +301,19 @@ sub container_resource_memory_usage_percentage_text ( $container_memory_limit,
 ###############################################################################
 binmode( STDOUT, "encoding(UTF-8)" );
 
-# my $tb = load_text_table();
-# printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
-#     $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
-#     $k8s_current_api_server;
-# print $tb;
+my $tb = load_text_table();
+printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
+    $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
+    $k8s_current_api_server;
+print $tb;
 
-while (1) {
-    my $tb = load_text_table();
-    print "\033[2J";      #clear the screen
-    print "\033[0;0H";    #jump to 0,0
-    printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
-        $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
-        $k8s_current_api_server;
-    print $tb;
-    sleep $ENV{WATCH_ITERATION};
-}
+# while (1) {
+#     my $tb = load_text_table();
+#     print "\033[2J";      #clear the screen
+#     print "\033[0;0H";    #jump to 0,0
+#     printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
+#         $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
+#         $k8s_current_api_server;
+#     print $tb;
+#     sleep $ENV{WATCH_ITERATION};
+# }
