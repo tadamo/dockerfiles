@@ -9,21 +9,27 @@ use Mojo::Log;
 use Text::Table;
 use Time::Piece;
 use Term::ExtendedColor ':attributes';
+use Number::Format;
 $|++;
 
 my $log = Mojo::Log->new->level( $ENV{MOJO_LOG_LEVEL} );
 my $ua  = Mojo::UserAgent->new;
 sub bu { return bold( underline(shift) ); }
-my @columns = (
-    bu("NAMESPACE"),                      bu("NAME"),
-    bu("PHASE"),                          bu("START-TIME"),
-    bu("NODE"),                           bu("IP"),
-    bold( fg( "grey23", "|" ) ), bu("NAME"),
-    bu("READY"),                          bu("RESTARTS"),
-    bu("CPU-REQ"),                        bu("CPU-LIMIT"),
-    bu("CPU-USAGE"),                      bu("MEM-REQ"),
-    bu("MEM-LIMIT"),                      bu("MEM-USAGE"),
+my @data_columns = (
+    bu("NAME"),       bu("PHASE"),
+    bu("START-TIME"), bu("NODE"),
+    bu("IP"),         bold( fg( "grey23", "|" ) ),
+    bu("NAME"),       bu("READY"),
+    bu("RESTARTS"),   bu("CPU-REQ"),
+    bu("CPU-LIMIT"),  bu("CPU-USAGE"),
+    bu("CPU%"),       bu("MEM-REQ"),
+    bu("MEM-LIMIT"),  bu("MEM-USAGE"),
     bu("MEM%")
+);
+my $number_format = Number::Format->new(
+    KIBI_SUFFIX => 'Ki',
+    MEBI_SUFFIX => 'Mi',
+    GIBI_SUFFIX => 'Gi',
 );
 
 ###############################################################################
@@ -105,18 +111,17 @@ async sub get_pods_details_p ($ua) {
 sub load_text_table {
     get_pods_details_p($ua)->wait;
 
-    my $tb = Text::Table->new(@columns);
+    my $tb = Text::Table->new(@data_columns);
 
     for my $pod_info_ref ( @{ $pods_info_ref->{items} } ) {
         my @tb_pod_row = (
-            $pod_info_ref->{metadata}{namespace},
             $pod_info_ref->{metadata}{name},
             $pod_info_ref->{status}{phase},
             utc_to_local( $pod_info_ref->{status}{startTime} ),
             $pod_info_ref->{spec}{nodeName},
             $pod_info_ref->{status}{podIP},
         );
-        my @empty_tb_pod_row = ( "", "", "", "", "", "" );
+        my @empty_tb_pod_row = map {""} ( 1 .. scalar @tb_pod_row );
         my $tb_pod_row_added_already;
 
         my $pod_metrics_ref = (
@@ -135,10 +140,30 @@ sub load_text_table {
                 = ( grep { $_->{name} eq $container_ref->{name} }
                     @{ $pod_metrics_ref->{containers} } )[0];
 
-            $container_status_ref->{ready}
-                = $container_status_ref->{ready}
-                ? fg( "springgreen3", "✔" )
-                : fg( "red2",         "X" );
+            $container_status_ref->{ready} = fg( "springgreen3", "✔" );
+            if ( not $container_status_ref->{ready} ) {
+                $container_status_ref->{ready} = "-"
+                    if $pod_info_ref->{status}{phase} eq "Pending";
+                $container_status_ref->{ready} = fg( "lightyellow3", "?" )
+                    if $pod_info_ref->{status}{phase} eq "Unknown";
+                $container_status_ref->{ready} = fg( "red2", "X" )
+                    if $pod_info_ref->{status}{phase} eq "Failed";
+            }
+
+            my $container_resource_memory_usage_bytes
+                = $number_format->unformat_number(
+                $container_metrics_ref->{usage}{memory} )
+                if $container_metrics_ref->{usage}{memory};
+
+            my $container_resource_memory_usage_bytes_text = "";
+            if ($container_resource_memory_usage_bytes) {
+                $container_resource_memory_usage_bytes_text
+                    = $number_format->format_bytes(
+                    $container_resource_memory_usage_bytes,
+                    mode      => "iec",
+                    precision => 0,
+                    );
+            }
 
             my @tb_container_row = (
                 bold( fg( "grey23", "|" ) ),
@@ -146,12 +171,19 @@ sub load_text_table {
                 $container_status_ref->{ready},
                 $container_status_ref->{restartCount},
                 $container_ref->{resources}{requests}{cpu},
-                $container_ref->{resources}{requests}{memory},
-                $container_metrics_ref->{usage}{cpu},
                 $container_ref->{resources}{limits}{cpu},
+                $container_metrics_ref->{usage}{cpu},
+                container_resource_cpu_usage_percentage_text(
+                    $container_ref->{resources}{limits}{cpu},
+                    $container_metrics_ref->{usage}{cpu}
+                ),
+                $container_ref->{resources}{requests}{memory},
                 $container_ref->{resources}{limits}{memory},
-                $container_metrics_ref->{usage}{memory},
-                "",
+                $container_resource_memory_usage_bytes_text,
+                container_resource_memory_usage_percentage_text(
+                    $container_ref->{resources}{limits}{memory},
+                    $container_resource_memory_usage_bytes
+                ),
             );
 
             $tb->load(
@@ -169,15 +201,102 @@ sub load_text_table {
     return $tb;
 }
 
+sub container_resource_cpu_usage_percentage_text ( $container_cpu_limit,
+    $container_cpu_usage )
+{
+    return '-'
+        if not $container_cpu_limit
+        or not $container_cpu_usage;
+
+    my $container_resource_limit_cpu_cores
+        = $container_cpu_limit =~ s/m$//
+        ? $container_cpu_limit * .001
+        : $container_cpu_limit;
+
+    my $container_resource_cpu_usage_cores
+        = $container_cpu_usage =~ s/m$//
+        ? $container_cpu_usage * .001
+        : $container_cpu_usage;
+
+    my $container_resource_cpu_usage_percentage = int(
+        (         $container_resource_cpu_usage_cores
+                / $container_resource_limit_cpu_cores
+        ) * 100
+    );
+
+    if ( $container_resource_cpu_usage_percentage >= 90 ) {
+        $container_resource_cpu_usage_percentage = fg( "red2",
+            ( sprintf '%s%s', $container_resource_cpu_usage_percentage, '%' ) );
+    }
+    elsif ( $container_resource_cpu_usage_percentage >= 70 ) {
+        $container_resource_cpu_usage_percentage = fg( "darkorange3",
+            ( sprintf '%s%s', $container_resource_cpu_usage_percentage, '%' ) );
+    }
+    else {
+        $container_resource_cpu_usage_percentage = sprintf '%s%s',
+            $container_resource_cpu_usage_percentage, '%';
+    }
+
+    return $container_resource_cpu_usage_percentage;
+}
+
+sub container_resource_memory_usage_percentage_text ( $container_memory_limit,
+    $container_memory_usage_bytes )
+{
+    return '-'
+        if not $container_memory_limit
+        or not $container_memory_usage_bytes;
+
+    my $container_memory_limit_bytes
+        = $number_format->unformat_number($container_memory_limit);
+
+    my $container_resource_memory_usage_percentage
+        = int(
+        ( $container_memory_usage_bytes / $container_memory_limit_bytes )
+        * 100 );
+
+    if ( $container_resource_memory_usage_percentage >= 90 ) {
+        $container_resource_memory_usage_percentage = fg(
+            "red2",
+            (   sprintf '%s%s',
+                $container_resource_memory_usage_percentage, '%'
+            )
+        );
+    }
+    elsif ( $container_resource_memory_usage_percentage >= 70 ) {
+        $container_resource_memory_usage_percentage = fg(
+            "darkorange3",
+            (   sprintf '%s%s',
+                $container_resource_memory_usage_percentage, '%'
+            )
+        );
+    }
+    else {
+        $container_resource_memory_usage_percentage = sprintf '%s%s',
+            $container_resource_memory_usage_percentage, '%';
+    }
+
+    return $container_resource_memory_usage_percentage;
+}
+
 ###############################################################################
 ###############################################################################
 ###############################################################################
 binmode( STDOUT, "encoding(UTF-8)" );
 
-while (1) {
-    my $tb = load_text_table();
-    print "\033[2J";      #clear the screen
-    print "\033[0;0H";    #jump to 0,0
-    print $tb;
-    sleep $ENV{WATCH_ITERATION};
-}
+my $tb = load_text_table();
+printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
+    $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
+    $k8s_current_api_server;
+print $tb;
+
+# while (1) {
+#     my $tb = load_text_table();
+#     print "\033[2J";      #clear the screen
+#     print "\033[0;0H";    #jump to 0,0
+#     printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
+#         $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
+#         $k8s_current_api_server;
+#     print $tb;
+#     sleep $ENV{WATCH_ITERATION};
+# }

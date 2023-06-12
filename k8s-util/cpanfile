@@ -5,3 +5,4 @@ requires "Cpanel::JSON::XS";
 requires "Mojolicious";
 requires "Term::ExtendedColor";
 requires "Text::Table";
+requires "Number::Format"
