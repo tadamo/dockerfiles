@@ -284,19 +284,19 @@ sub container_resource_memory_usage_percentage_text ( $container_memory_limit,
 ###############################################################################
 binmode( STDOUT, "encoding(UTF-8)" );
 
-my $tb = load_text_table();
-printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
-    $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
-    $k8s_current_api_server;
-print $tb;
+# my $tb = load_text_table();
+# printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
+#     $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
+#     $k8s_current_api_server;
+# print $tb;
 
-# while (1) {
-#     my $tb = load_text_table();
-#     print "\033[2J";      #clear the screen
-#     print "\033[0;0H";    #jump to 0,0
-#     printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
-#         $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
-#         $k8s_current_api_server;
-#     print $tb;
-#     sleep $ENV{WATCH_ITERATION};
-# }
+while (1) {
+    my $tb = load_text_table();
+    print "\033[2J";      #clear the screen
+    print "\033[0;0H";    #jump to 0,0
+    printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
+        $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
+        $k8s_current_api_server;
+    print $tb;
+    sleep $ENV{WATCH_ITERATION};
+}
