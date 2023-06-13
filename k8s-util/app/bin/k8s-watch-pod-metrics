@@ -228,6 +228,9 @@ sub state_text ( $state, $reason ) {
     my %orange_reason = ( 'CrashLoopBackOff' => 1, );
     return sprintf "%s,%s", $state, fg( "darkorange3", "$reason" )
         if exists $orange_reason{$reason};
+    my %blue_reason = ( 'ContainerCreating' => 1, );
+    return sprintf "%s,%s", $state, fg( "lightskyblue3", "$reason" )
+        if exists $blue_reason{$reason};
     return sprintf "%s,%s", $state, $reason;
 }
 
