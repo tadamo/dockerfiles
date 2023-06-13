@@ -20,11 +20,11 @@ my @data_columns = (
     bu("START-TIME"), bu("NODE"),
     bu("IP"),         bold( fg( "grey23", "|" ) ),
     bu("NAME"),       bu("READY"),
-    bu("RESTARTS"),   bu("CPU-REQ"),
-    bu("CPU-LIMIT"),  bu("CPU-USAGE"),
-    bu("CPU%"),       bu("MEM-REQ"),
-    bu("MEM-LIMIT"),  bu("MEM-USAGE"),
-    bu("MEM%")
+    bu("RESTARTS"),   bu("STATE"),
+    bu("CPU-REQ"),    bu("CPU-LIMIT"),
+    bu("CPU-USAGE"),  bu("CPU%"),
+    bu("MEM-REQ"),    bu("MEM-LIMIT"),
+    bu("MEM-USAGE"),  bu("MEM%")
 );
 my $number_format = Number::Format->new(
     KIBI_SUFFIX => 'Ki',
@@ -71,16 +71,6 @@ my $k8s_api_server_request_headers
 $log->debug( "k8s_api_server_request_headers, $_: "
         . $k8s_api_server_request_headers->to_hash->{$_} )
     for keys %{ $k8s_api_server_request_headers->to_hash };
-
-###############################################################################
-###############################################################################
-###############################################################################
-
-sub utc_to_local ($utc_ts) {
-    my $utc_tp   = Time::Piece->strptime( $utc_ts, '%Y-%m-%dT%H:%M:%SZ' );
-    my $local_tp = localtime( $utc_tp->epoch );
-    return $local_tp->strftime('%Y-%m-%d %I:%M:%S %p');
-}
 
 ###############################################################################
 ###############################################################################
@@ -140,6 +130,11 @@ sub load_text_table {
                 = ( grep { $_->{name} eq $container_ref->{name} }
                     @{ $pod_metrics_ref->{containers} } )[0];
 
+            my $container_state
+                = ( keys %{ $container_status_ref->{state} } )[0];
+            my $container_state_reason
+                = $container_status_ref->{state}{$container_state}{reason};
+
             my $container_resource_memory_usage_bytes
                 = $number_format->unformat_number(
                 $container_metrics_ref->{usage}{memory} )
@@ -163,6 +158,7 @@ sub load_text_table {
                     $pod_info_ref->{status}{phase}
                 ),
                 restarts_text( $container_status_ref->{restartCount} ),
+                state_text( $container_state, $container_state_reason ),
                 $container_ref->{resources}{requests}{cpu},
                 $container_ref->{resources}{limits}{cpu},
                 $container_metrics_ref->{usage}{cpu},
@@ -194,6 +190,12 @@ sub load_text_table {
     return $tb;
 }
 
+sub utc_to_local ($utc_ts) {
+    my $utc_tp   = Time::Piece->strptime( $utc_ts, '%Y-%m-%dT%H:%M:%SZ' );
+    my $local_tp = localtime( $utc_tp->epoch );
+    return $local_tp->strftime('%Y-%m-%d %I:%M:%S %p');
+}
+
 sub phase_text ($phase) {
     return "$phase"                        if $phase eq 'Succeeded';
     return fg( "lightskyblue3", "$phase" ) if $phase eq 'Pending';
@@ -216,6 +218,17 @@ sub ready_text ( $ready, $phase ) {
 sub restarts_text ($restarts) {
     return fg( "darkorange3", "$restarts" ) if $restarts > 0;
     return $restarts;
+}
+
+sub state_text ( $state, $reason ) {
+    return $state if not $reason;
+    my %red_reason = ( 'OOMKilled' => 1, 'Error' => 1, );
+    return sprintf "%s,%s", $state, fg( "red2", "$reason" )
+        if exists $red_reason{$reason};
+    my %orange_reason = ( 'CrashLoopBackOff' => 1, );
+    return sprintf "%s,%s", $state, fg( "darkorange3", "$reason" )
+        if exists $orange_reason{$reason};
+    return sprintf "%s,%s", $state, $reason;
 }
 
 sub container_resource_cpu_usage_percentage_text ( $container_cpu_limit,
@@ -311,9 +324,10 @@ while (1) {
     my $tb = load_text_table();
     print "\033[2J";      #clear the screen
     print "\033[0;0H";    #jump to 0,0
-    printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
+    printf "%s: %s        %s: %s        %s: %s        %s: %s\n\n",
+        bold("NAMESPACE"),
         $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
-        $k8s_current_api_server;
+        $k8s_current_api_server, bold("TZ"), ( $ENV{TZ} // "" );
     print $tb;
     sleep $ENV{WATCH_ITERATION};
 }
