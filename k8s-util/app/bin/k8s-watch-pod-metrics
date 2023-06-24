@@ -43,6 +43,9 @@ $log->debug("k8s_current_namespace: $k8s_current_namespace");
 $log->debug("k8s_current_server: $k8s_current_server");
 $log->debug("k8s_current_user: $k8s_current_user");
 
+$ENV{NAMESPACE} = $k8s_current_namespace if not $ENV{NAMESPACE};
+$log->debug("NAMESPACE: $ENV{NAMESPACE}");
+
 my $k8s_current_api_server
     = ( grep { $_->{name} eq $k8s_current_server }
         @{ $kubeconfig->{clusters} } )[0]->{cluster}{server};
@@ -55,12 +58,12 @@ $log->debug("k8s_current_user_api_token: $k8s_current_user_api_token");
 
 my $k8s_pods_api_url
     = Mojo::URL->new(
-    "$k8s_current_api_server/api/v1/namespaces/$k8s_current_namespace/pods");
+    "$k8s_current_api_server/api/v1/namespaces/$ENV{NAMESPACE}/pods");
 $log->debug( "k8s_pods_api_url: " . $k8s_pods_api_url->to_string );
 
 my $k8s_metrics_pods_api_url
     = Mojo::URL->new(
-    "$k8s_current_api_server/apis/metrics.k8s.io/v1beta1/namespaces/$k8s_current_namespace/pods"
+    "$k8s_current_api_server/apis/metrics.k8s.io/v1beta1/namespaces/$ENV{NAMESPACE}/pods"
     );
 $log->debug(
     "k8s_metrics_pods_api_url: " . $k8s_metrics_pods_api_url->to_string );
@@ -102,6 +105,10 @@ sub load_text_table {
     get_pods_details_p($ua)->wait;
 
     my $tb = Text::Table->new(@data_columns);
+
+    my $total_cpu_resource_req   = 0;
+    my $total_cpu_resource_limit = 0;
+    my $total_cpu_usage          = 0;
 
     for my $pod_info_ref ( @{ $pods_info_ref->{items} } ) {
         my @tb_pod_row = (
@@ -150,6 +157,20 @@ sub load_text_table {
                     );
             }
 
+            $total_cpu_resource_req
+                += cpu_text_to_number(
+                $container_ref->{resources}{requests}{cpu} )
+                if $container_ref->{resources}{requests}{cpu};
+
+            $total_cpu_resource_limit
+                += cpu_text_to_number(
+                $container_ref->{resources}{limits}{cpu} )
+                if $container_ref->{resources}{limits}{cpu};
+
+            $total_cpu_usage
+                += cpu_text_to_number( $container_metrics_ref->{usage}{cpu} )
+                if $container_metrics_ref->{usage}{cpu};
+
             my @tb_container_row = (
                 bold( fg( "grey23", "|" ) ),
                 $container_ref->{name},
@@ -186,6 +207,16 @@ sub load_text_table {
             $tb_pod_row_added_already = 1;
         }
     }
+
+    my @filler_row = ( map {" "} ( 1 .. scalar @data_columns ) );
+    $filler_row[10] = bold("⬇");
+    $filler_row[11] = bold("⬇");
+    $filler_row[12] = bold("⬇");
+    $tb->load( \@filler_row );
+    $filler_row[10] = cpu_number_to_text($total_cpu_resource_req);
+    $filler_row[11] = cpu_number_to_text($total_cpu_resource_limit);
+    $filler_row[12] = cpu_number_to_text($total_cpu_usage);
+    $tb->load( \@filler_row );
 
     return $tb;
 }
@@ -234,6 +265,19 @@ sub state_text ( $state, $reason ) {
     return sprintf "%s,%s", $state, $reason;
 }
 
+sub cpu_number_to_text ($cpu_number) {
+    return                                       if not $cpu_number;
+    return sprintf "%sm", ( $cpu_number * 1000 ) if $cpu_number < 1;
+    return $cpu_number;
+}
+
+sub cpu_text_to_number ($cpu_text) {
+    return if not $cpu_text;
+    return $cpu_text =~ s/m$//
+        ? $cpu_text * .001
+        : $cpu_text;
+}
+
 sub container_resource_cpu_usage_percentage_text ( $container_cpu_limit,
     $container_cpu_usage )
 {
@@ -242,14 +286,10 @@ sub container_resource_cpu_usage_percentage_text ( $container_cpu_limit,
         or not $container_cpu_usage;
 
     my $container_resource_limit_cpu_cores
-        = $container_cpu_limit =~ s/m$//
-        ? $container_cpu_limit * .001
-        : $container_cpu_limit;
+        = cpu_text_to_number($container_cpu_limit);
 
     my $container_resource_cpu_usage_cores
-        = $container_cpu_usage =~ s/m$//
-        ? $container_cpu_usage * .001
-        : $container_cpu_usage;
+        = cpu_text_to_number($container_cpu_usage);
 
     my $container_resource_cpu_usage_percentage = int(
         (         $container_resource_cpu_usage_cores
@@ -317,20 +357,15 @@ sub container_resource_memory_usage_percentage_text ( $container_memory_limit,
 ###############################################################################
 binmode( STDOUT, "encoding(UTF-8)" );
 
-# my $tb = load_text_table();
-# printf "%s: %s        %s: %s        %s: %s\n\n", bold("NAMESPACE"),
-#     $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
-#     $k8s_current_api_server;
-# print $tb;
-
 while (1) {
     my $tb = load_text_table();
-    print "\033[2J";      #clear the screen
-    print "\033[0;0H";    #jump to 0,0
+    print "\033[2J"   if $ENV{WATCH_ITERATION};    #clear the screen
+    print "\033[0;0H" if $ENV{WATCH_ITERATION};    #jump to 0,0
     printf "%s: %s        %s: %s        %s: %s        %s: %s\n\n",
         bold("NAMESPACE"),
-        $k8s_current_namespace, bold("USER"), $k8s_current_user, bold("API"),
+        $ENV{NAMESPACE}, bold("USER"), $k8s_current_user, bold("API"),
         $k8s_current_api_server, bold("TZ"), ( $ENV{TZ} // "" );
     print $tb;
+    last if not $ENV{WATCH_ITERATION};
     sleep $ENV{WATCH_ITERATION};
 }
