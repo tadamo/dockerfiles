@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
+#set -o xtrace   # Print command traces before executing command
+printf "%s\n" "$0"
+
+if ! whoami &> /dev/null; then
+    if [ -w /etc/passwd ]; then
+        echo "${USER_NAME:-default}:x:$(id -u):0:${USER_NAME:-default} user:${HOME}:/sbin/nologin" >> /etc/passwd
+    fi
+fi
+
+exec "$@"
