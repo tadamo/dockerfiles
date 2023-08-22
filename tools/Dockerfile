@@ -23,9 +23,9 @@ RUN set -x \
     nginx \
     iperf3 \
     tzdata \
+    mailx \
     mysql-client \
     postgresql13-client \
-    mailutils \
     # pip packages
     && pip install yq \
     # allow unpriviledged access
