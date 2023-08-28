@@ -110,6 +110,10 @@ sub load_text_table {
     my $total_cpu_resource_limit = 0;
     my $total_cpu_usage          = 0;
 
+    my $total_memory_resource_req   = 0;
+    my $total_memory_resource_limit = 0;
+    my $total_memory_usage          = 0;
+
     for my $pod_info_ref ( @{ $pods_info_ref->{items} } ) {
         my @tb_pod_row = (
             $pod_info_ref->{metadata}{name},
@@ -157,6 +161,9 @@ sub load_text_table {
                     );
             }
 
+            #
+            # CPU totals
+            #
             $total_cpu_resource_req
                 += cpu_text_to_number(
                 $container_ref->{resources}{requests}{cpu} )
@@ -170,6 +177,24 @@ sub load_text_table {
             $total_cpu_usage
                 += cpu_text_to_number( $container_metrics_ref->{usage}{cpu} )
                 if $container_metrics_ref->{usage}{cpu};
+
+            #
+            # Memory totals
+            #
+            $total_memory_resource_req
+                += memory_text_to_number(
+                $container_ref->{resources}{requests}{memory} )
+                if $container_ref->{resources}{requests}{memory};
+
+            $total_memory_resource_limit
+                += memory_text_to_number(
+                $container_ref->{resources}{limits}{memory} )
+                if $container_ref->{resources}{limits}{memory};
+
+            $total_memory_usage
+                += memory_text_to_number(
+                $container_metrics_ref->{usage}{memory} )
+                if $container_metrics_ref->{usage}{memory};
 
             my @tb_container_row = (
                 bold( fg( "grey23", "|" ) ),
@@ -212,10 +237,16 @@ sub load_text_table {
     $filler_row[10] = bold("⬇");
     $filler_row[11] = bold("⬇");
     $filler_row[12] = bold("⬇");
+    $filler_row[14] = bold("⬇");
+    $filler_row[15] = bold("⬇");
+    $filler_row[16] = bold("⬇");
     $tb->load( \@filler_row );
     $filler_row[10] = cpu_number_to_text($total_cpu_resource_req);
     $filler_row[11] = cpu_number_to_text($total_cpu_resource_limit);
     $filler_row[12] = cpu_number_to_text($total_cpu_usage);
+    $filler_row[14] = memory_number_to_text($total_memory_resource_req);
+    $filler_row[15] = memory_number_to_text($total_memory_resource_limit);
+    $filler_row[16] = memory_number_to_text($total_memory_usage);
     $tb->load( \@filler_row );
 
     return $tb;
@@ -350,6 +381,16 @@ sub container_resource_memory_usage_percentage_text ( $container_memory_limit,
     }
 
     return $container_resource_memory_usage_percentage;
+}
+
+sub memory_number_to_text ($memory_number) {
+    return if not $memory_number;
+    return $number_format->format_bytes($memory_number);
+}
+
+sub memory_text_to_number ($memory_text) {
+    return if not $memory_text;
+    return $number_format->unformat_number($memory_text);
 }
 
 ###############################################################################
