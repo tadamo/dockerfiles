@@ -13,21 +13,20 @@ RUN set -x \
     netcat-openbsd \
     nmap \
     jq \
+    yq \
     coreutils \
     openldap-clients \
     openssh-client \
     httpie \
     apache2-utils \
-    py-pip \
     gettext \
     nginx \
     iperf3 \
     tzdata \
     mailx \
     mysql-client \
+    mariadb-connector-c-dev \
     postgresql13-client \
-    # pip packages
-    && pip install yq \
     # allow unpriviledged access
     && mkdir -p /.httpie \
     && chgrp -R 0 /.httpie \
@@ -41,7 +40,6 @@ RUN set -x \
     && ssh-keygen -t ed25519 -a 100 -C "tools-insecure-ed25519 SSH key" -f  /root/.ssh/tools-insecure-ed25519 -P "" \
     && printf "Host *\n  IdentityFile /root/.ssh/tools-insecure-ed25519\n" >> /etc/ssh/ssh_config \
     # cleanup cache
-    && find / | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf \
     && rm -rf /var/cache /root/.cache
 ENV TZ America/New_York
 ENV LISTEN_PORT 8000
