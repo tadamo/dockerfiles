@@ -36,6 +36,9 @@ RUN set -x \
     && touch /var/lib/nginx/logs/error.log \
     && chgrp -R 0 /etc/nginx/ /var/log/ /var/lib/nginx /var/tmp/ /etc/passwd \
     && chmod -R g=u /etc/nginx/ /var/log/ /var/lib/nginx /var/tmp/ /etc/passwd \
+    # Setup permissions to ssh configuration directory
+    && mkdir -p /.ssh \
+    && chmod -R 777 /.ssh \
     # ssh keys (testing only)
     && ssh-keygen -t ed25519 -a 100 -C "tools-insecure-ed25519 SSH key" -f  /root/.ssh/tools-insecure-ed25519 -P "" \
     && printf "Host *\n  IdentityFile /root/.ssh/tools-insecure-ed25519\n" >> /etc/ssh/ssh_config \

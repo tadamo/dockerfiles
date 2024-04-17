@@ -11,4 +11,8 @@ if ! whoami &> /dev/null; then
     fi
 fi
 
+if [ -n "${KNOWN_HOSTS:-}" ]; then
+    echo "$KNOWN_HOSTS" > /.ssh/known_hosts
+fi
+
 exec "$@"
