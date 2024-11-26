@@ -15,4 +15,11 @@ if [ -n "${KNOWN_HOSTS:-}" ]; then
     echo "$KNOWN_HOSTS" > /.ssh/known_hosts
 fi
 
+if [ -n "${SSH_KEY:-}" ]; then
+    echo "$SSH_KEY" > /.ssh/ssh-key
+    chmod 600 /.ssh/ssh-key
+    ssh-keygen -f /.ssh/ssh-key -y > /.ssh/ssh-key.pub
+    chmod 644 /.ssh/ssh-key.pub
+fi
+
 exec "$@"

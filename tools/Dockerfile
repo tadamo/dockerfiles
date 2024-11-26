@@ -24,9 +24,9 @@ RUN set -x \
     iperf3 \
     tzdata \
     mailx \
+    rsync \
     mysql-client \
     mariadb-connector-c-dev \
-    postgresql13-client \
     # allow unpriviledged access
     && mkdir -p /.httpie \
     && chgrp -R 0 /.httpie \
@@ -39,9 +39,6 @@ RUN set -x \
     # Setup permissions to ssh configuration directory
     && mkdir -p /.ssh \
     && chmod -R 777 /.ssh \
-    # ssh keys (testing only)
-    && ssh-keygen -t ed25519 -a 100 -C "tools-insecure-ed25519 SSH key" -f  /root/.ssh/tools-insecure-ed25519 -P "" \
-    && printf "Host *\n  IdentityFile /root/.ssh/tools-insecure-ed25519\n" >> /etc/ssh/ssh_config \
     # cleanup cache
     && rm -rf /var/cache /root/.cache
 ENV TZ America/New_York
