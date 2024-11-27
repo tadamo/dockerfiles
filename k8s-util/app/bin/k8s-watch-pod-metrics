@@ -297,16 +297,21 @@ sub state_text ( $state, $reason ) {
 }
 
 sub cpu_number_to_text ($cpu_number) {
-    return                                       if not $cpu_number;
-    return sprintf "%sm", ( $cpu_number * 1000 ) if $cpu_number < 1;
-    return $cpu_number;
+    return             if not $cpu_number;
+    return $cpu_number if $cpu_number > 1;
+    return sprintf "%sm", ( $cpu_number * 1000 );
 }
 
 sub cpu_text_to_number ($cpu_text) {
     return if not $cpu_text;
-    return $cpu_text =~ s/m$//
-        ? $cpu_text * .001
-        : $cpu_text;
+
+    # Trailing n is nanocore
+    return $cpu_text * .000000001 if $cpu_text =~ s/n$//;
+
+    # Trailing m is millicore
+    return $cpu_text * .001 if $cpu_text =~ s/m$//;
+
+    return $cpu_text;
 }
 
 sub container_resource_cpu_usage_percentage_text ( $container_cpu_limit,
