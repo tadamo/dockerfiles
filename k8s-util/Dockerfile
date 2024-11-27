@@ -9,7 +9,7 @@ ENV TZ=America/New_York
 ENV PERL_CPANM_OPT="--no-man-pages --notest --mirror https://cpan.metacpan.org --mirror https://mirrors.rit.edu/CPAN --verify"
 
 COPY cpanfile /
-ENV MOJO_HOME /app
+ENV MOJO_HOME=/app
 COPY ./app $MOJO_HOME
 ENV MOJO_LOG_LEVEL=info
 ENV MOJO_MODE=development
