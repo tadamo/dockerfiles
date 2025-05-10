@@ -20,6 +20,7 @@ RUN set -x \
     httpie \
     apache2-utils \
     gettext \
+    gum \
     nginx \
     iperf3 \
     tzdata \
@@ -41,6 +42,6 @@ RUN set -x \
     && chmod -R 777 /.ssh \
     # cleanup cache
     && rm -rf /var/cache /root/.cache
-ENV TZ America/New_York
-ENV LISTEN_PORT 8000
+ENV TZ=America/New_York
+ENV LISTEN_PORT=8000
 ENTRYPOINT [ "/usr/local/bin/entrypoint" ]
